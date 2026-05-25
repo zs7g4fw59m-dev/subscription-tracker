@@ -1,46 +1,59 @@
 # 订阅管家 — 微信小程序上架指南
 
-> **当前测试地址**：`https://guardian-dear-aims-travelling.trycloudflare.com`（Cloudflare Tunnel，长期有效）
+> **当前测试地址**：`https://guardian-dear-aims-travelling.trycloudflare.com`（Cloudflare Tunnel）
 > 
 > **注意**：已将端口从 5000 改为 8765，因为 macOS 的 AirPlay 接收器占用 5000 端口。
+> 
+> **本地服务**：Flask :8765 + cloudflared tunnel（自动重启配置在 ~/Library/LaunchAgents/）
 
-## 第一步：部署后端到公网
+## 快速部署到生产环境
 
-后端需要 HTTPS 域名（微信小程序强制要求）。
-
-### 方案 A：Railway / Render（推荐，免费额度够用）
+### 方式一：GitHub + Railway（推荐，免费额度够用）
 
 ```bash
-# 1. 在 railway.app 或 render.com 注册账号
-# 2. 连接 GitHub，导入本项目
-# 3. 设置启动命令（注意端口变量）：
-gunicorn server:app -b 0.0.0.0:$PORT
-# 4. 获得域名如 https://xxx.railway.app
+# 1. GitHub 认证（需要浏览器授权，无法自动化）
+gh auth login --hostname github.com --git-protocol https --web
+
+# 2. 创建仓库并推送
+gh repo create subscription-tracker --public --source=. --remote=origin --push
+
+# 3. 部署到 Railway
+# 访问 railway.app → New Project → Deploy from GitHub Repo
+# 选择 subscription-tracker，自动部署
 ```
 
-### 方案 B：阿里云 / 腾讯云 ECS
+**或者用一条命令**（GitHub 认证后运行）：
 
 ```bash
-# 1. 购买云服务器，安装 Python 3.9+
-# 2. 上传代码
+gh auth login --web && \
+gh repo create subscription-tracker --public --source=. --remote=origin --push && \
+open "https://railway.app/new"
+```
+
+### 方式二：直接使用当前隧道（零配置）
+
+当前 cloudflared 隧道已就绪，HTTPS 公网可访问。适合开发测试。
+
+```bash
+# 查看当前隧道 URL
+grep trycloudflare.com /tmp/cloudflared.log
+
+# 重启隧道
+pkill cloudflared
+cloudflared tunnel --url http://localhost:8765 &
+```
+
+### 方式三：阿里云 / 腾讯云 ECS
+
+```bash
 scp -r subscription-tracker/ user@server:/opt/
-# 3. 安装依赖
-pip install -r requirements.txt
-# 4. 配置 Nginx + gunicorn + Let's Encrypt HTTPS
-# 5. 启动
-gunicorn server:app -b 127.0.0.1:8000 -w 2 --daemon
-```
-
-### 方案 C：本地测试用 ngrok
-
-```bash
-ngrok http 5000
-# 获得临时 HTTPS 域名，如 https://abc.ngrok.io
+ssh user@server "cd /opt/subscription-tracker && pip install -r requirements.txt && gunicorn server:app -b 127.0.0.1:8000 -w 2 --daemon"
+# 然后配置 Nginx + Let's Encrypt HTTPS
 ```
 
 ---
 
-## 第二步：注册微信小程序
+## 注册微信小程序
 
 1. 打开 [mp.weixin.qq.com](https://mp.weixin.qq.com)
 2. 注册小程序账号（需身份证/营业执照验证）
@@ -49,7 +62,7 @@ ngrok http 5000
 
 ---
 
-## 第三步：配置小程序代码
+## 配置小程序代码
 
 1. 编辑 `miniapp/project.config.json`，将 `YOUR_APPID_HERE` 替换为你的 AppID
 2. 编辑 `miniapp/app.js`，将 `baseURL` 改为你的后端域名：
@@ -62,7 +75,7 @@ globalData: {
 
 ---
 
-## 第四步：上传小程序
+## 上传小程序
 
 1. 下载安装 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)
 2. 打开 `miniapp/` 目录
@@ -77,7 +90,7 @@ globalData: {
 
 ```
 subscription-tracker/
-├── app.py              # Flask 后端
+├── app.py              # Flask 后端（含 80+ 商户识别引擎）
 ├── server.py           # 生产 WSGI 入口
 ├── requirements.txt    # Python 依赖
 ├── data.db             # SQLite 数据库
