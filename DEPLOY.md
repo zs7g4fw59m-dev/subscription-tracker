@@ -1,10 +1,10 @@
 # 订阅管家 — 微信小程序上架指南
 
-> **当前测试地址**：`https://guardian-dear-aims-travelling.trycloudflare.com`（Cloudflare Tunnel）
+> **生产地址**：`https://clever-compassion-production-c25a.up.railway.app`（Railway 永久域名）
+> 
+> **GitHub**：`https://github.com/zs7g4fw59m-dev/subscription-tracker`
 > 
 > **注意**：已将端口从 5000 改为 8765，因为 macOS 的 AirPlay 接收器占用 5000 端口。
-> 
-> **本地服务**：Flask :8765 + cloudflared tunnel（自动重启配置在 ~/Library/LaunchAgents/）
 
 ## 快速部署到生产环境
 
