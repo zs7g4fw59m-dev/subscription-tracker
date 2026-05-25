@@ -1,6 +1,6 @@
 # 订阅管家 — 微信小程序上架指南
 
-> **当前测试地址**：`https://degar-117-189-246-69.run.pinggy-free.link`（60 分钟有效）
+> **当前测试地址**：`https://guardian-dear-aims-travelling.trycloudflare.com`（Cloudflare Tunnel，长期有效）
 > 
 > **注意**：已将端口从 5000 改为 8765，因为 macOS 的 AirPlay 接收器占用 5000 端口。
 
