@@ -1,0 +1,194 @@
+<view class="container">
+  <!-- Stats bar -->
+  <view class="stats-bar">
+    <view class="stat-card">
+      <view class="stat-label">月度支出</view>
+      <view class="stat-value">¥{{stats.total_monthly || 0}}</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-label">年度支出</view>
+      <view class="stat-value">¥{{stats.total_yearly || 0}}</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-label">活跃订阅</view>
+      <view class="stat-value">{{stats.active_count || 0}}</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-label">订阅总数</view>
+      <view class="stat-value">{{stats.total_count || 0}}</view>
+    </view>
+  </view>
+
+  <!-- Category chips -->
+  <scroll-view scroll-x class="cat-scroll" wx:if="{{stats.category_breakdown.length}}">
+    <view class="cat-chips">
+      <view
+        class="cat-chip {{filterCategory === item.category ? 'active' : ''}}"
+        wx:for="{{stats.category_breakdown}}"
+        wx:key="category"
+        data-cat="{{item.category}}"
+        bindtap="toggleCategory">
+        {{item.category}} ¥{{item.total}}
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- Toolbar -->
+  <view class="toolbar">
+    <picker mode="selector" range="{{statusOptions}}" value="{{statusIndex}}" bindchange="onStatusChange">
+      <view class="picker-btn">{{statusOptions[statusIndex]}}</view>
+    </picker>
+    <view class="toolbar-actions">
+      <button class="btn btn-sm" size="mini" bindtap="showSmartModal">🧠</button>
+      <button class="btn btn-sm" size="mini" bindtap="showSmsUpload">📱</button>
+      <button class="btn btn-primary btn-sm" size="mini" bindtap="showAddModal">+ 添加</button>
+    </view>
+  </view>
+
+  <!-- Subscriptions list -->
+  <view class="sub-list" wx:if="{{subs.length}}">
+    <view
+      class="sub-card"
+      wx:for="{{subs}}"
+      wx:key="id"
+      data-id="{{item.id}}"
+      bindtap="editSub">
+      <view class="sub-icon" style="background:{{item._color}}">{{item._icon}}</view>
+      <view class="sub-info">
+        <view class="sub-name">{{item.name}}</view>
+        <view class="sub-meta">{{item.category}} · {{item._cycleLabel}}{{item.next_renewal ? ' · ' + item.next_renewal : ''}}</view>
+      </view>
+      <view class="sub-amount">
+        <view class="amount-value">{{item._symbol}}{{item.amount}}</view>
+        <view class="amount-cycle">¥{{item._cnyMonthly}}/月</view>
+      </view>
+      <view class="sub-status status-{{item.status}}">{{item._statusLabel}}</view>
+    </view>
+  </view>
+
+  <!-- Empty state -->
+  <view class="empty-state" wx:else>
+    <view class="empty-icon">📋</view>
+    <view>还没有订阅记录</view>
+    <view class="empty-hint">点击「添加」或「智能识别」开始</view>
+  </view>
+
+  <!-- Upcoming renewals -->
+  <view class="section" wx:if="{{stats.upcoming.length}}">
+    <view class="section-title">即将续费</view>
+    <view class="upcoming-list">
+      <view class="upcoming-item" wx:for="{{stats.upcoming}}" wx:key="id">
+        <view class="upcoming-date">{{item.next_renewal}}</view>
+        <view class="upcoming-name">{{item.name}}</view>
+        <view class="upcoming-amount">¥{{item.amount}}</view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- Add / Edit modal -->
+<view class="modal-mask" wx:if="{{modalVisible}}" bindtap="closeModal">
+  <view class="modal" catchtap="noop">
+    <view class="modal-header">
+      <view class="modal-title">{{editingId ? '编辑订阅' : '添加订阅'}}</view>
+      <view class="modal-close" bindtap="closeModal">✕</view>
+    </view>
+    <view class="modal-body">
+      <view class="form-group">
+        <view class="form-label">名称</view>
+        <input class="form-input" placeholder="例如：ChatGPT Plus" value="{{form.name}}" bindinput="onFormInput" data-field="name"/>
+      </view>
+      <view class="form-row">
+        <view class="form-group flex-2">
+          <view class="form-label">金额</view>
+          <input class="form-input" type="digit" placeholder="0.00" value="{{form.amount}}" bindinput="onFormInput" data-field="amount"/>
+        </view>
+        <view class="form-group flex-1">
+          <view class="form-label">币种</view>
+          <picker mode="selector" range="{{currencyOptions}}" value="{{form._currencyIndex}}" bindchange="onCurrencyChange">
+            <view class="form-input picker-val">{{currencyOptions[form._currencyIndex]}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="form-row">
+        <view class="form-group flex-1">
+          <view class="form-label">周期</view>
+          <picker mode="selector" range="{{cycleOptions}}" range-key="label" value="{{form._cycleIndex}}" bindchange="onCycleChange">
+            <view class="form-input picker-val">{{cycleOptions[form._cycleIndex].label}}</view>
+          </picker>
+        </view>
+        <view class="form-group flex-1">
+          <view class="form-label">分类</view>
+          <input class="form-input" placeholder="其他" value="{{form.category}}" bindinput="onFormInput" data-field="category"/>
+        </view>
+      </view>
+      <view class="form-row">
+        <view class="form-group flex-1">
+          <view class="form-label">续费日期</view>
+          <picker mode="date" value="{{form.next_renewal}}" bindchange="onDateChange">
+            <view class="form-input picker-val">{{form.next_renewal || '选择日期'}}</view>
+          </picker>
+        </view>
+        <view class="form-group flex-1">
+          <view class="form-label">状态</view>
+          <picker mode="selector" range="{{statusOptions}}" value="{{form._statusIndex}}" bindchange="onFormStatusChange">
+            <view class="form-input picker-val">{{statusOptions[form._statusIndex]}}</view>
+          </picker>
+        </view>
+      </view>
+      <view class="form-group">
+        <view class="form-label">备注</view>
+        <input class="form-input" placeholder="备注（可选）" value="{{form.notes}}" bindinput="onFormInput" data-field="notes"/>
+      </view>
+      <view class="form-actions">
+        <button class="btn btn-danger" wx:if="{{editingId}}" size="mini" bindtap="deleteSub">删除</button>
+        <view class="form-actions-right">
+          <button class="btn" size="mini" bindtap="closeModal">取消</button>
+          <button class="btn btn-primary" size="mini" bindtap="saveSub">保存</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- Smart parse modal -->
+<view class="modal-mask" wx:if="{{smartVisible}}" bindtap="closeSmartModal">
+  <view class="modal" catchtap="noop">
+    <view class="modal-header">
+      <view class="modal-title">智能识别账单</view>
+      <view class="modal-close" bindtap="closeSmartModal">✕</view>
+    </view>
+    <view class="modal-body">
+      <view class="help-text">粘贴银行短信、支付宝通知等账单文字，自动提取订阅信息</view>
+      <textarea class="smart-textarea" placeholder="粘贴账单文字到这里..." value="{{smartText}}" bindinput="onSmartInput"/>
+      <view class="scan-progress" wx:if="{{smartLoading}}">
+        <view class="spinner"></view>
+        <view>正在识别...</view>
+      </view>
+      <view class="error-msg" wx:if="{{smartError}}">{{smartError}}</view>
+
+      <!-- Scan results -->
+      <view wx:if="{{detectedItems.length}}" class="detected-list">
+        <view class="help-text">识别到 {{detectedItems.length}} 笔，勾选后导入</view>
+        <label class="detected-item" wx:for="{{detectedItems}}" wx:key="name">
+          <checkbox checked="{{item._checked}}" data-index="{{index}}" bindtap="toggleCheck"/>
+          <view class="detected-info">
+            <view class="detected-name">{{item.name}}
+              <text class="tag">{{item.category}}</text>
+            </view>
+            <view class="detected-meta">{{item._symbol}}{{item.amount}} / {{item._cycleLabel}}</view>
+          </view>
+        </label>
+      </view>
+
+      <view class="form-actions">
+        <button class="btn" size="mini" bindtap="closeSmartModal">取消</button>
+        <button class="btn btn-primary" size="mini" bindtap="importDetected" wx:if="{{detectedItems.length}}">导入选中</button>
+        <button class="btn btn-primary" size="mini" bindtap="doSmartParse" wx:else>识别</button>
+      </view>
+    </view>
+  </view>
+</view>
+
+<!-- Toast -->
+<view class="toast" wx:if="{{toastMsg}}">{{toastMsg}}</view>

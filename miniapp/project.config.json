@@ -1,0 +1,15 @@
+{
+  "description": "订阅管家 - 掌控你的订阅支出",
+  "packOptions": { "ignore": [] },
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "postcss": true,
+    "minified": true
+  },
+  "compileType": "miniprogram",
+  "appid": "YOUR_APPID_HERE",
+  "projectname": "subscription-tracker",
+  "libVersion": "3.3.0",
+  "condition": {}
+}
